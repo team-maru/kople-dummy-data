@@ -74,19 +74,14 @@ with open("free_post.csv", "w", newline="", encoding="utf-8") as f:
             category
         ])
 
-# =====================================================
-# Comment CSV (NO replies, NO parent_id)
-# =====================================================
-with open("comment.csv", "w", newline="", encoding="utf-8") as f:
-    writer = csv.writer(f)
-    writer.writerow([
-        "member_index",
-        "post_index",
-        "content"
-    ])
+# -------------------------------
+# Comment TSV (SAFE VERSION)
+# -------------------------------
+with open("comment.tsv", "w", newline="", encoding="utf-8") as f:
+    writer = csv.writer(f, delimiter="\t")
+    writer.writerow(["member_index", "post_index", "content"])
 
     comments_created = 0
-
     while comments_created < TOTAL_COMMENT_TARGET:
         writer.writerow([
             random.randint(1, MEMBER_COUNT),
