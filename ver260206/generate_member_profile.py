@@ -11,11 +11,11 @@ random.seed(42)
 # =====================
 # CONFIG
 # =====================
-START_ID = 31
+START_ID = 1
 MEMBER_COUNT = 50
 
 # ISO2 nation codes
-NATION_CODES = ["KR", "US", "JP", "FR", "DE", "VN"]
+NATION_CODES = ["HK", "US", "FR", "CA", "AR", "BR", "AU", "GB", "ES", "PK", "PT", "IN", "KR"]
 
 # university.id values already in DB (예시)
 UNIVERSITY_IDS = [
@@ -23,13 +23,27 @@ UNIVERSITY_IDS = [
 ]
 
 GENDERS = ["MALE", "FEMALE"]
-STATUSES = [
+STUDENT_STATUSES = [
     "EXCHANGE_STUDENT",
     "INTERNATIONAL_STUDENT",
     "LANGUAGE_SCHOOL_STUDENT",
     "FOREIGN_RESIDENT",
     "KOREAN_STUDENT"
 ]
+NON_UNIV_STATUSES = [
+    "KOREAN_WORKER",
+    "TOURIST",
+    "FOREIGN_RESIDENT",
+    "OTHER"
+]
+
+ALL_STATUSES = STUDENT_STATUSES + NON_UNIV_STATUSES
+
+# 가중치 설정 (학생 85%, 비학생 15%)
+STATUS_WEIGHTS = (
+    [0.85 / len(STUDENT_STATUSES)] * len(STUDENT_STATUSES)
+    + [0.15 / len(NON_UNIV_STATUSES)] * len(NON_UNIV_STATUSES)
+)
 
 used_nicknames = set()
 
@@ -78,8 +92,6 @@ with open("member.csv", "w", newline="", encoding="utf-8") as f:
     for i in range(MEMBER_COUNT):
         member_id = START_ID + i
         created_at = random_recent_time(40)
-        updated_at = random_recent_time(5)
-        last_login = random_recent_time(7)
 
         writer.writerow([
             member_id,
@@ -90,10 +102,10 @@ with open("member.csv", "w", newline="", encoding="utf-8") as f:
             False,
             "",
             True, True, True, True, True,
-            last_login.isoformat().replace("+00:00", "Z"),
+            created_at.isoformat().replace("+00:00", "Z"),
             "USER",
             created_at.isoformat().replace("+00:00", "Z"),
-            updated_at.isoformat().replace("+00:00", "Z"),
+            "",
             ""
         ])
 
@@ -114,20 +126,35 @@ with open("profile.csv", "w", newline="", encoding="utf-8") as f:
     for i in range(MEMBER_COUNT):
         pid = START_ID + i
         created_at = random_recent_time(40)
-        updated_at = random_recent_time(5)
+
+        status = random.choices(ALL_STATUSES, weights=STATUS_WEIGHTS, k=1)[0]
+
+        # status에 따른 university_id 처리
+        if status in NON_UNIV_STATUSES:
+            university_id = ""
+        else:
+            university_id = random.randint(1, 145)
+        
+        # KOREAN_STUDENT → nation_code 고정
+        if status == "KOREAN_STUDENT":
+            nation_code = "KR"
+        else:
+            nation_code = random.choice(
+                [code for code in NATION_CODES if code != "KR"]
+            )
 
         writer.writerow([
             pid,
             pid,
             generate_nickname(),
-            (created_at + timedelta(days=3)).isoformat().replace("+00:00", "Z"),
+            "",
             random_birthdate().isoformat(),
             random.choice(GENDERS),
-            random.choice(NATION_CODES),
-            random.choice(UNIVERSITY_IDS),
-            random.choice(STATUSES),
+            nation_code,
+            university_id,
+            status,
             created_at.isoformat().replace("+00:00", "Z"),
-            updated_at.isoformat().replace("+00:00", "Z"),
+            "",
             ""
         ])
 
@@ -144,7 +171,6 @@ with open("buddy.csv", "w", newline="", encoding="utf-8") as f:
     for i in range(MEMBER_COUNT):
         bid = START_ID + i
         created_at = random_recent_time(40)
-        updated_at = random_recent_time(5)
 
         writer.writerow([
             bid,
@@ -152,7 +178,7 @@ with open("buddy.csv", "w", newline="", encoding="utf-8") as f:
             fake.sentence(nb_words=12),
             True,
             created_at.isoformat().replace("+00:00", "Z"),
-            updated_at.isoformat().replace("+00:00", "Z")
+            ""
         ])
 
 print("✅ member / profile / buddy CSV generated successfully")
